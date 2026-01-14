@@ -1,59 +1,89 @@
-# MyAngularApp
+# CountriesDB Widget Angular Example
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.0.5.
+Example Angular 21 app with SSR/SSG demonstrating CountriesDB widget integration. Shows how to use `reload: true` option when navigating between routes to ensure the widget properly re-scans the DOM for select elements.
 
-## Development server
+## Overview
 
-To start a local development server, run:
+This example demonstrates:
+- Using the CountriesDB widget with Angular 21 and SSR/SSG
+- Handling widget reload when navigating between routes
+- Setting up environment configuration for the public key
+- Using `afterNextRender` and `isPlatformBrowser` for SSR compatibility
+- Creating multiple routes with country and subdivision selects
 
+## Getting Started
+
+1. Install dependencies:
 ```bash
-ng serve
+npm install
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
+2. Update the environment file `src/environments/environment.ts`:
+```typescript
+export const environment = {
+  production: false,
+  countriesDbPublicKey: 'YOUR_PUBLIC_KEY'
+};
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
+3. Run the development server:
 ```bash
-ng generate --help
+npm start
 ```
 
-## Building
+4. Open your browser to [http://localhost:4200](http://localhost:4200)
 
-To build the project run:
+## Routes
 
-```bash
-ng build
+- **`/`** - Redirects to `/countries`
+- **`/countries`** - Country select widget
+- **`/subdivisions`** - Country and subdivision select widgets (linked)
+
+Navigate between routes to test that the widget properly reloads on route changes.
+
+## Key Code Pattern
+
+```typescript
+import { Component, PLATFORM_ID, inject, afterNextRender } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { environment } from '../../environments/environment';
+
+@Component({...})
+export class CountriesComponent {
+  private platformId = inject(PLATFORM_ID);
+
+  constructor() {
+    afterNextRender(() => {
+      if (isPlatformBrowser(this.platformId)) {
+        this.initWidget();
+      }
+    });
+  }
+
+  private initWidget(): void {
+    const publicKey = environment.countriesDbPublicKey;
+
+    ;(window as any).CountriesDBConfig = {
+      publicKey,
+    };
+
+    if ((window as any).CountriesWidgetLoad) {
+      (window as any).CountriesWidgetLoad({ reload: true });
+    } else {
+      import('@countriesdb/widget');
+    }
+  }
+}
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+The `reload: true` option is important for client-side routing frameworks like Angular Router, as it ensures the widget re-scans the DOM for select elements after route navigation. The `isPlatformBrowser` check ensures the widget only initializes in the browser (not during SSR).
 
-## Running unit tests
+## Documentation Links
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+- [CountriesDB Documentation](https://countriesdb.com/docs)
+- [CountriesDB Widget](https://countriesdb.com/docs/widgets)
+- [Angular Documentation](https://angular.dev)
 
-```bash
-ng test
-```
+---
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+This example is maintained by **[NAYEE LLC](https://nayee.net)** (the publisher of CountriesDB).
